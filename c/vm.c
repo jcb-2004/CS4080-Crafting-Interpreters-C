@@ -10,16 +10,28 @@ static void resetStack() {
   vm.stackTop = vm.stack;
 }
 
+//Chapter 15 Challenge 3
 void initVM() {
-  resetStack();
+    vm.stackCapacity = 256;
+    vm.stack = malloc(sizeof(Value) * vm.stackCapacity);
+    resetStack();
 }
 
+//Chapter 15 Challenge 3
 void freeVM() {
+	free(vm.stack);
 }
 
+//Chapter 15 Challenge 3
 void push(Value value) {
-  *vm.stackTop = value;
-  vm.stackTop++;
+    if (vm.stackTop - vm.stack >= vm.stackCapacity) {
+        vm.stackCapacity *= 2;
+        vm.stack = realloc(vm.stack, sizeof(Value) * vm.stackCapacity);
+        vm.stackTop = vm.stack + vm.stackCapacity / 2;
+    }
+
+    *vm.stackTop = value;
+    vm.stackTop++;
 }
 
 Value pop() {
