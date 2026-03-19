@@ -9,17 +9,28 @@ typedef enum {
   OP_RETURN,
 } OpCode;
 
+//Chapter 14 Challenge 1
 typedef struct {
-  int count;
-  int capacity;
-  uint8_t* code;
-  ValueArray constants;
-  int* lines;
+    int offset;
+    int line;
+} LineStart;
+
+//Chapter 14 Challenge 1
+typedef struct {
+    int count;
+    int capacity;
+    uint8_t* code;
+    ValueArray constants;
+    int lineCount;
+    int lineCapacity;
+    LineStart* lines;
 } Chunk;
 
 void initChunk(Chunk* chunk);
 void freeChunk(Chunk* chunk);
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
 int addConstant(Chunk* chunk, Value value);
+//Chapter 14 Challenge 1
+int getLine(Chunk* chunk, int instruction);
 
 #endif
