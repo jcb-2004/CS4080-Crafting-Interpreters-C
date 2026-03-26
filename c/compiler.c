@@ -27,6 +27,7 @@ typedef enum {
   PREC_FACTOR,      // * /
   PREC_UNARY,       // ! -
   PREC_CALL,        // . ()
+  PREC_CONDITIONAL,  // ?: Chapter 17 Challenge 3
   PREC_PRIMARY
 } Precedence;
 
@@ -130,6 +131,7 @@ static void binary(); //this forward declaration isn't the book, but the compile
 static void expression();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
+static void conditional(); //Chapter 17 Challenge 3
 
 static void grouping() {
   expression();
@@ -155,6 +157,8 @@ static void unary() {
 }
 
 ParseRule rules[] = {
+  [TOKEN_COLON]			= {NULL,     NULL,   PREC_NONE}, //Chapter 17 Challenge 3
+  [TOKEN_QUESTION]		= {NULL,	 conditional, PREC_CONDITIONAL}, //Chapter 17 Challenge 3
   [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
   [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE}, 
@@ -214,6 +218,12 @@ static void parsePrecedence(Precedence precedence) {
   }
 }
 
+//Chapter 17 Challenge 3
+static void conditional() {
+  parsePrecedence(PREC_CONDITIONAL);
+  consume(TOKEN_COLON, "Expect ':' after then branch of conditional operator.");
+  parsePrecedence(PREC_ASSIGNMENT);
+}
 static ParseRule* getRule(TokenType type) {
   return &rules[type];
 }

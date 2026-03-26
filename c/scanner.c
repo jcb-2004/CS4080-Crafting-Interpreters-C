@@ -55,6 +55,8 @@ Token scanToken() {
   if (isDigit(c)) return number();
 
   switch (c) {
+	case '?': return makeToken(TOKEN_QUESTION); //Chapter 17 Challenge 3
+	case ':': return makeToken(TOKEN_COLON); //Chapter 17 Challenge 3
     case '(': return makeToken(TOKEN_LEFT_PAREN);
     case ')': return makeToken(TOKEN_RIGHT_PAREN);
     case '{': return makeToken(TOKEN_LEFT_BRACE);
