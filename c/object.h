@@ -4,6 +4,8 @@
 #include "common.h"
 #include "value.h"
 
+#include <stdbool.h> //Chapter 19 Challenge 2
+
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
@@ -22,12 +24,12 @@ struct Obj {
 
 struct ObjString {
   Obj obj;
+  bool ownsChars; //Chapter 19 Challenge 2
   int length;
-  char* chars;
+  const char* chars; //Chapter 19 Challenge 2
 };
 
-ObjString* takeString(char* chars, int length);
-ObjString* copyString(const char* chars, int length);
+ObjString* makeString(bool ownsChars, char* chars, int length); //Chapter 19 Challenge 2
 void printObject(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {

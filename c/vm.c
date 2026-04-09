@@ -55,6 +55,7 @@ static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
+//Chapter 19 Challenge 2
 static void concatenate() {
   ObjString* b = AS_STRING(pop());
   ObjString* a = AS_STRING(pop());
@@ -65,7 +66,7 @@ static void concatenate() {
   memcpy(chars + a->length, b->chars, b->length);
   chars[length] = '\0';
 
-  ObjString* result = takeString(chars, length);
+  ObjString* result = makeString(true, chars, length); // <--
   push(OBJ_VAL(result));
 }
 

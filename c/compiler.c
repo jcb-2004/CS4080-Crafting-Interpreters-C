@@ -142,9 +142,10 @@ static void number() {
   emitConstant(NUMBER_VAL(value));
 }
 
+//Chapter 19 Challenge 2
 static void string() {
-  emitConstant(OBJ_VAL(copyString(parser.previous.start + 1,
-                                  parser.previous.length - 2)));
+  emitConstant(OBJ_VAL(makeString(false,
+      (char*)parser.previous.start + 1, parser.previous.length - 2)));
 }
 
 static void unary() {
