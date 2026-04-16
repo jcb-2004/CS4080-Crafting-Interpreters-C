@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> //Chapter 21 Challenge 1
 
 #include "common.h"
 #include "compiler.h"
@@ -255,9 +256,23 @@ static void parsePrecedence(Precedence precedence) {
   }
 }
 
+//Chapter 21 Challenge 1
 static uint8_t identifierConstant(Token* name) {
-  return makeConstant(OBJ_VAL(copyString(name->start,
-                                         name->length)));
+  //Check if this variable name is already in the constants table.
+  for (int i = 0; i < currentChunk()->constants.count; i++) {
+    Value existing = currentChunk()->constants.values[i];
+    if (!IS_STRING(existing)) continue;
+
+    ObjString* existingStr = AS_STRING(existing);
+
+	//Ensure a total match before reusing the existing slot
+    if (existingStr->length == name->length &&
+        memcmp(existingStr->chars, name->start, name->length) == 0) {
+      return (uint8_t)i;
+    }
+  }
+
+  return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
 static uint8_t parseVariable(const char* errorMessage) {
