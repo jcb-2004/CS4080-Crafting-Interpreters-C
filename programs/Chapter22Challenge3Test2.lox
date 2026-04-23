@@ -1,0 +1,4 @@
+const x = 10;
+x = 20;
+print x;
+//Expected output: Compile time error simce a const cannot be reassigned

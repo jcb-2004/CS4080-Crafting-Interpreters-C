@@ -43,17 +43,119 @@ typedef struct {
 typedef struct {
   Token name;
   int depth;
+  bool isConst; //Chapter 22 Challenge 3
 } Local;
+
+//Chapter 22 Challenge 3
+typedef struct {
+  Token name;
+} ConstGlobal;
 
 typedef struct {
   Local locals[UINT8_COUNT];
   int localCount;
   int scopeDepth;
+  //Chapter 22 Challenge 3
+  ConstGlobal constGlobals[UINT8_COUNT];
+  int constGlobalCount;
 } Compiler;
 
 Parser parser;
 Compiler* current = NULL;
 Chunk* compilingChunk;
+
+//Chapter 22 Challenge 3 (I am just bruteforcing the compiler with lots of forward declarations)
+static Chunk* currentChunk();
+static void errorAt(Token* token, const char* message);
+static void error(const char* message);
+static void errorAtCurrent(const char* message);
+static void advance();
+static void consume(TokenType type, const char* message);
+static bool check(TokenType type);
+static bool match(TokenType type);
+static void emitByte(uint8_t byte);
+static void emitBytes(uint8_t byte1, uint8_t byte2);
+static void emitConstant(Value value);
+static void emitReturn();
+static uint8_t makeConstant(Value value);
+static bool identifiersEqual(Token* a, Token* b);
+static void addConstGlobal(Token name);
+static bool isConstGlobal(Token* name);
+static uint8_t identifierConstant(Token* name);
+static int resolveLocal(Compiler* compiler, Token* name);
+static void declareVariable(bool isConst);
+static void markInitialized();
+static void expression();
+static void statement();
+static void declaration();
+static ParseRule* getRule(TokenType type);
+static void parsePrecedence(Precedence precedence);
+static void binary(bool canAssign);
+static void literal(bool canAssign);
+
+//Chapter 22 Challenge 3
+static void variableDeclaration(bool isConst) {
+  consume(TOKEN_IDENTIFIER,
+          isConst ? "Expect const variable name."
+                  : "Expect variable name.");
+
+  Token name = parser.previous;
+
+  declareVariable(isConst);
+  uint8_t global = 0;
+  if (current->scopeDepth == 0) {
+    if (isConstGlobal(&name)) {
+      error("Already a const global with this name.");
+    }
+    global = identifierConstant(&name);
+  }
+
+  if (isConst) {
+    consume(TOKEN_EQUAL, "Expect '=' after const variable name.");
+    expression();
+  } else {
+    if (match(TOKEN_EQUAL)) {
+      expression();
+    } else {
+      emitByte(OP_NIL);
+    }
+  }
+
+  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+  if (current->scopeDepth > 0) {
+    markInitialized();
+  } else {
+    if (isConst) addConstGlobal(name);
+    emitBytes(OP_DEFINE_GLOBAL, global);
+  }
+}
+
+//Chapter 22 Challenge 3
+static bool identifiersEqual(Token* a, Token* b) {
+  if (a->length != b->length) return false;
+  return memcmp(a->start, b->start, a->length) == 0;
+}
+
+//Chapter 22 Challenge 3
+static void addConstGlobal(Token name) {
+  if (current->constGlobalCount == UINT8_COUNT) {
+    error("Too many const global variables in one chunk.");
+    return;
+  }
+
+  current->constGlobals[current->constGlobalCount++].name = name;
+}
+
+//Chapter 22 Challenge 3
+static bool isConstGlobal(Token* name) {
+  for (int i = 0; i < current->constGlobalCount; i++) {
+    if (identifiersEqual(name, &current->constGlobals[i].name)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 static Chunk* currentChunk() {
   return compilingChunk;
@@ -144,6 +246,7 @@ static void emitConstant(Value value) {
 static void initCompiler(Compiler* compiler) {
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
+  compiler->constGlobalCount = 0; //Chapter 22 Challenge 3
   current = compiler;
 }
 
@@ -196,21 +299,58 @@ static void string(bool canAssign) {
                                   parser.previous.length - 2)));
 }
 
+//Chapter 22 Challenge 3
+static int resolveLocal(Compiler* compiler, Token* name) {
+  for (int i = compiler->localCount - 1; i >= 0; i--) {
+    Local* local = &compiler->locals[i];
+    if (identifiersEqual(name, &local->name)) {
+      if (local->depth == -1) {
+        error("Can't read local variable in its own initializer.");
+      }
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+//Chapter 22 Challenge 3
 static void namedVariable(Token name, bool canAssign) {
   uint8_t getOp, setOp;
   int arg = resolveLocal(current, &name);
+
   if (arg != -1) {
+    Local* local = &current->locals[arg];
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
-  } else {
-    arg = identifierConstant(&name);
-    getOp = OP_GET_GLOBAL;
-    setOp = OP_SET_GLOBAL;
+
+    if (canAssign && match(TOKEN_EQUAL)) {
+      if (local->isConst) {
+        error("Can't assign to const variable.");
+        expression(); // still compile RHS so parser stays in sync
+      } else {
+        expression();
+        emitBytes(setOp, (uint8_t)arg);
+      }
+    } else {
+      emitBytes(getOp, (uint8_t)arg);
+    }
+
+    return;
   }
 
+  arg = identifierConstant(&name);
+  getOp = OP_GET_GLOBAL;
+  setOp = OP_SET_GLOBAL;
+
   if (canAssign && match(TOKEN_EQUAL)) {
-    expression();
-    emitBytes(setOp, (uint8_t)arg);
+    if (isConstGlobal(&name)) {
+      error("Can't assign to const variable.");
+      expression(); // keep parser synchronized
+    } else {
+      expression();
+      emitBytes(setOp, (uint8_t)arg);
+    }
   } else {
     emitBytes(getOp, (uint8_t)arg);
   }
@@ -275,6 +415,7 @@ ParseRule rules[] = {
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_CONST]         = {NULL,     NULL,   PREC_NONE}, //Chapter 22 Challenge 3
 };
 
 static void parsePrecedence(Precedence precedence) {
@@ -304,75 +445,38 @@ static uint8_t identifierConstant(Token* name) {
                                          name->length)));
 }
 
-static bool identifiersEqual(Token* a, Token* b) {
-  if (a->length != b->length) return false;
-  return memcmp(a->start, b->start, a->length) == 0;
-}
-
-static int resolveLocal(Compiler* compiler, Token* name) {
-  for (int i = compiler->localCount - 1; i >= 0; i--) {
-    Local* local = &compiler->locals[i];
-    if (identifiersEqual(name, &local->name)) {
-      if (local->depth == -1) {
-        error("Can't read local variable in its own initializer.");
-      }
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-static void addLocal(Token name) {
-  if (current->localCount == UINT8_COUNT) {
-    error("Too many local variables in function.");
-    return;
-  }	
-	
-  Local* local = &current->locals[current->localCount++];
-  local->name = name;
-  local->depth = -1;
-}
-
-static void declareVariable() {
+//Chapter 22 Challenge 3
+static void declareVariable(bool isConst) {
   if (current->scopeDepth == 0) return;
 
   Token* name = &parser.previous;
+
   for (int i = current->localCount - 1; i >= 0; i--) {
     Local* local = &current->locals[i];
     if (local->depth != -1 && local->depth < current->scopeDepth) {
-      break; 
+      break;
     }
 
     if (identifiersEqual(name, &local->name)) {
       error("Already a variable with this name in this scope.");
     }
   }
-	
-  addLocal(*name);
-}
 
-static uint8_t parseVariable(const char* errorMessage) {
-  consume(TOKEN_IDENTIFIER, errorMessage);
-	
-  declareVariable();
-  if (current->scopeDepth > 0) return 0;
-	
-  return identifierConstant(&parser.previous);
-}
-
-static void markInitialized() {
-  current->locals[current->localCount - 1].depth =
-      current->scopeDepth;
-}
-
-static void defineVariable(uint8_t global) {
-  if (current->scopeDepth > 0) {
-    markInitialized();
+  if (current->localCount == UINT8_COUNT) {
+    error("Too many local variables in function.");
     return;
-  }	
-	
-  emitBytes(OP_DEFINE_GLOBAL, global);
+  }
+
+  Local* local = &current->locals[current->localCount++];
+  local->name = *name;
+  local->depth = -1;
+  local->isConst = isConst;
+}
+
+//Chapter 22 Challenge 3
+static void markInitialized() {
+  if (current->scopeDepth == 0) return;
+  current->locals[current->localCount - 1].depth = current->scopeDepth;
 }
 
 static ParseRule* getRule(TokenType type) {
@@ -389,20 +493,6 @@ static void block() {
   }
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
-}
-
-static void varDeclaration() {
-  uint8_t global = parseVariable("Expect variable name.");
-
-  if (match(TOKEN_EQUAL)) {
-    expression();
-  } else {
-    emitByte(OP_NIL);
-  }
-  consume(TOKEN_SEMICOLON,
-          "Expect ';' after variable declaration.");
-
-  defineVariable(global);
 }
 
 static void expressionStatement() {
@@ -431,6 +521,7 @@ static void synchronize() {
       case TOKEN_WHILE:
       case TOKEN_PRINT:
       case TOKEN_RETURN:
+	  case TOKEN_CONST: //Chapter 22 Challenge 3
         return;
 
       default:
@@ -441,13 +532,16 @@ static void synchronize() {
   }
 }
 
+//Chapter 22 Challenge 3
 static void declaration() {
-  if (match(TOKEN_VAR)) {
-    varDeclaration();
+  if (match(TOKEN_CONST)) {
+    variableDeclaration(true);
+  } else if (match(TOKEN_VAR)) {
+    variableDeclaration(false);
   } else {
     statement();
   }
-	
+
   if (parser.panicMode) synchronize();
 }
 
