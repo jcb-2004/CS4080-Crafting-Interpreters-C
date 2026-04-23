@@ -6,9 +6,12 @@
 #include "compiler.h"
 #include "scanner.h"
 #include "object.h"
+#include "memory.h" //Chapter 22 Challenge 4
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
+
+#define MAX_LOCAL_SLOTS 65535 //Chapter 22 Challenge 4
 #endif
 
 typedef struct {
@@ -45,9 +48,11 @@ typedef struct {
   int depth;
 } Local;
 
+//Chapter 22 Challenge 4
 typedef struct {
-  Local locals[UINT8_COUNT];
+  Local* locals;
   int localCount;
+  int localCapacity;
   int scopeDepth;
 } Compiler;
 
@@ -137,12 +142,21 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
   emitByte(byte2);
 }
 
+//Chapter 22 Challenge 4
+static void emitShort(uint16_t value) {
+  emitByte((value >> 8) & 0xff);
+  emitByte(value & 0xff);
+}
+
 static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
+//Chapter 22 Challenge 4
 static void initCompiler(Compiler* compiler) {
+  compiler->locals = NULL;
   compiler->localCount = 0;
+  compiler->localCapacity = 0;
   compiler->scopeDepth = 0;
   current = compiler;
 }
@@ -181,6 +195,32 @@ static void declaration();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
+//Chapter 22 Challenge 4
+static void ensureLocalCapacity(Compiler* compiler) {
+  if (compiler->localCount + 1 <= compiler->localCapacity) return;
+
+  int oldCapacity = compiler->localCapacity;
+  int newCapacity = GROW_CAPACITY(oldCapacity);
+  if (newCapacity > MAX_LOCAL_SLOTS + 1) {
+    newCapacity = MAX_LOCAL_SLOTS + 1;
+  }
+
+  compiler->locals = GROW_ARRAY(Local,
+      compiler->locals,
+      oldCapacity,
+      newCapacity);
+
+  compiler->localCapacity = newCapacity;
+}
+
+//Chapter 22 Challenge 4
+static void freeCompilerLocals(Compiler* compiler) {
+  FREE_ARRAY(Local, compiler->locals, compiler->localCapacity);
+  compiler->locals = NULL;
+  compiler->localCapacity = 0;
+  compiler->localCount = 0;
+}
+
 static void grouping(bool canAssign) {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
@@ -196,23 +236,39 @@ static void string(bool canAssign) {
                                   parser.previous.length - 2)));
 }
 
+//Chapter 22 Challenge 4
 static void namedVariable(Token name, bool canAssign) {
-  uint8_t getOp, setOp;
   int arg = resolveLocal(current, &name);
+
   if (arg != -1) {
-    getOp = OP_GET_LOCAL;
-    setOp = OP_SET_LOCAL;
-  } else {
-    arg = identifierConstant(&name);
-    getOp = OP_GET_GLOBAL;
-    setOp = OP_SET_GLOBAL;
+    if (canAssign && match(TOKEN_EQUAL)) {
+      expression();
+
+      if (arg <= UINT8_MAX) {
+        emitBytes(OP_SET_LOCAL, (uint8_t)arg);
+      } else {
+        emitByte(OP_SET_LOCAL_LONG);
+        emitShort((uint16_t)arg);
+      }
+    } else {
+      if (arg <= UINT8_MAX) {
+        emitBytes(OP_GET_LOCAL, (uint8_t)arg);
+      } else {
+        emitByte(OP_GET_LOCAL_LONG);
+        emitShort((uint16_t)arg);
+      }
+    }
+
+    return;
   }
+
+  uint8_t global = identifierConstant(&name);
 
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
-    emitBytes(setOp, (uint8_t)arg);
+    emitBytes(OP_SET_GLOBAL, global);
   } else {
-    emitBytes(getOp, (uint8_t)arg);
+    emitBytes(OP_GET_GLOBAL, global);
   }
 }
 
@@ -323,12 +379,15 @@ static int resolveLocal(Compiler* compiler, Token* name) {
   return -1;
 }
 
+//Chapter 22 Challenge 4
 static void addLocal(Token name) {
-  if (current->localCount == UINT8_COUNT) {
+  if (current->localCount > MAX_LOCAL_SLOTS) {
     error("Too many local variables in function.");
     return;
-  }	
-	
+  }
+
+  ensureLocalCapacity(current);
+
   Local* local = &current->locals[current->localCount++];
   local->name = name;
   local->depth = -1;
@@ -497,16 +556,17 @@ bool compile(const char* source, Chunk* chunk) {
   Compiler compiler;
   initCompiler(&compiler);
   compilingChunk = chunk;
-	
+
   parser.hadError = false;
   parser.panicMode = false;
-	
+
   advance();
-	
+
   while (!match(TOKEN_EOF)) {
     declaration();
   }
-	
+
   endCompiler();
+  freeCompilerLocals(&compiler); //Chapter 22 Challenge 4
   return !parser.hadError;
 }

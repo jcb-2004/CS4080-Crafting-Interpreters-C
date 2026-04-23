@@ -1,0 +1,40 @@
+{
+  var v000;  var v001;  var v002;  var v003;  var v004;  var v005;  var v006;  var v007;
+  var v008;  var v009;  var v010;  var v011;  var v012;  var v013;  var v014;  var v015;
+  var v016;  var v017;  var v018;  var v019;  var v020;  var v021;  var v022;  var v023;
+  var v024;  var v025;  var v026;  var v027;  var v028;  var v029;  var v030;  var v031;
+  var v032;  var v033;  var v034;  var v035;  var v036;  var v037;  var v038;  var v039;
+  var v040;  var v041;  var v042;  var v043;  var v044;  var v045;  var v046;  var v047;
+  var v048;  var v049;  var v050;  var v051;  var v052;  var v053;  var v054;  var v055;
+  var v056;  var v057;  var v058;  var v059;  var v060;  var v061;  var v062;  var v063;
+  var v064;  var v065;  var v066;  var v067;  var v068;  var v069;  var v070;  var v071;
+  var v072;  var v073;  var v074;  var v075;  var v076;  var v077;  var v078;  var v079;
+  var v080;  var v081;  var v082;  var v083;  var v084;  var v085;  var v086;  var v087;
+  var v088;  var v089;  var v090;  var v091;  var v092;  var v093;  var v094;  var v095;
+  var v096;  var v097;  var v098;  var v099;  var v100;  var v101;  var v102;  var v103;
+  var v104;  var v105;  var v106;  var v107;  var v108;  var v109;  var v110;  var v111;
+  var v112;  var v113;  var v114;  var v115;  var v116;  var v117;  var v118;  var v119;
+  var v120;  var v121;  var v122;  var v123;  var v124;  var v125;  var v126;  var v127;
+  var v128;  var v129;  var v130;  var v131;  var v132;  var v133;  var v134;  var v135;
+  var v136;  var v137;  var v138;  var v139;  var v140;  var v141;  var v142;  var v143;
+  var v144;  var v145;  var v146;  var v147;  var v148;  var v149;  var v150;  var v151;
+  var v152;  var v153;  var v154;  var v155;  var v156;  var v157;  var v158;  var v159;
+  var v160;  var v161;  var v162;  var v163;  var v164;  var v165;  var v166;  var v167;
+  var v168;  var v169;  var v170;  var v171;  var v172;  var v173;  var v174;  var v175;
+  var v176;  var v177;  var v178;  var v179;  var v180;  var v181;  var v182;  var v183;
+  var v184;  var v185;  var v186;  var v187;  var v188;  var v189;  var v190;  var v191;
+  var v192;  var v193;  var v194;  var v195;  var v196;  var v197;  var v198;  var v199;
+  var v200;  var v201;  var v202;  var v203;  var v204;  var v205;  var v206;  var v207;
+  var v208;  var v209;  var v210;  var v211;  var v212;  var v213;  var v214;  var v215;
+  var v216;  var v217;  var v218;  var v219;  var v220;  var v221;  var v222;  var v223;
+  var v224;  var v225;  var v226;  var v227;  var v228;  var v229;  var v230;  var v231;
+  var v232;  var v233;  var v234;  var v235;  var v236;  var v237;  var v238;  var v239;
+  var v240;  var v241;  var v242;  var v243;  var v244;  var v245;  var v246;  var v247;
+  var v248;  var v249;  var v250;  var v251;  var v252;  var v253;  var v254;  var v255;
+  var v256;
+
+  v256 = 123;
+  print v256;
+}
+
+//Expected output: 123

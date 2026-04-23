@@ -16,6 +16,8 @@ typedef enum {
   OP_POP,
   OP_GET_LOCAL,
   OP_SET_LOCAL,
+  OP_GET_LOCAL_LONG, //Chapter 22 Challenge 4
+  OP_SET_LOCAL_LONG, //Chapter 22 Challenge 4
   OP_GET_GLOBAL,
   OP_DEFINE_GLOBAL,
   OP_SET_GLOBAL,
