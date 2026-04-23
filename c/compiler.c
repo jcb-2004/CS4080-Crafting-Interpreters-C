@@ -6,6 +6,7 @@
 #include "compiler.h"
 #include "scanner.h"
 #include "object.h"
+#include "memory.h" //Chapter 23 Challenge 1
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -211,6 +212,10 @@ static void declaration();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
+//Chapter 23 Challenge 1
+static void switchStatement(void);
+static void addJumpOffset(int** jumps, int* count, int* capacity, int offset);
+
 static void grouping(bool canAssign) {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
@@ -317,6 +322,17 @@ ParseRule rules[] = {
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
+
+//Chapter 23 Challenge 1
+static void addJumpOffset(int** jumps, int* count, int* capacity, int offset) {
+  if (*capacity < *count + 1) {
+    int oldCapacity = *capacity;
+    *capacity = GROW_CAPACITY(oldCapacity);
+    *jumps = GROW_ARRAY(int, *jumps, oldCapacity, *capacity);
+  }
+
+  (*jumps)[(*count)++] = offset;
+}
 
 static void parsePrecedence(Precedence precedence) {
   advance();
@@ -545,6 +561,72 @@ static void whileStatement() {
   emitByte(OP_POP);
 }
 
+//Chapter 23 Challenge 1
+static void switchStatement(void) {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after switch value.");
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before switch cases.");
+
+  int* endJumps = NULL;
+  int endJumpCount = 0;
+  int endJumpCapacity = 0;
+  bool sawDefault = false;
+
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    if (match(TOKEN_CASE)) {
+      if (sawDefault) {
+        error("Can't have 'case' after 'default' in switch.");
+      }
+
+      emitByte(OP_DUP);
+      expression();
+      consume(TOKEN_COLON, "Expect ':' after case value.");
+      emitByte(OP_EQUAL);
+
+      int nextCaseJump = emitJump(OP_JUMP_IF_FALSE);
+      emitByte(OP_POP);
+
+      while (!check(TOKEN_CASE) &&
+             !check(TOKEN_DEFAULT) &&
+             !check(TOKEN_RIGHT_BRACE) &&
+             !check(TOKEN_EOF)) {
+        declaration();
+      }
+
+      addJumpOffset(&endJumps, &endJumpCount, &endJumpCapacity,
+                    emitJump(OP_JUMP));
+
+      patchJump(nextCaseJump);
+      emitByte(OP_POP); 
+    } else if (match(TOKEN_DEFAULT)) {
+      if (sawDefault) {
+        error("Already have a 'default' clause in switch.");
+      }
+
+      sawDefault = true;
+      consume(TOKEN_COLON, "Expect ':' after 'default'.");
+
+      while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+        declaration();
+      }
+    } else {
+      error("Expect 'case' or 'default' inside switch.");
+      advance();
+    }
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body.");
+
+  for (int i = 0; i < endJumpCount; i++) {
+    patchJump(endJumps[i]);
+  }
+
+  FREE_ARRAY(int, endJumps, endJumpCapacity);
+
+  emitByte(OP_POP);
+}
+
 static void synchronize() {
   parser.panicMode = false;
 
@@ -559,6 +641,10 @@ static void synchronize() {
       case TOKEN_WHILE:
       case TOKEN_PRINT:
       case TOKEN_RETURN:
+	  //Chapter 23 Challenge 1
+	  case TOKEN_SWITCH:
+	  case TOKEN_CASE:
+	  case TOKEN_DEFAULT:
         return;
 
       default:
@@ -586,6 +672,8 @@ static void statement() {
     forStatement();
   } else if (match(TOKEN_IF)) {
     ifStatement();
+  } else if (match(TOKEN_SWITCH)) { //Chapter 23 Challenge 1
+    switchStatement();
   } else if (match(TOKEN_WHILE)) {
     whileStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {

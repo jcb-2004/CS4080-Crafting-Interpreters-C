@@ -204,6 +204,12 @@ static InterpretResult run() {
         vm.ip -= offset;
         break;
       }
+	  //Chapter 23 Challenge 1
+	  case OP_DUP: {
+	    Value value = peek(0);
+	    push(value);
+	    break;
+	  }
       case OP_RETURN: {
         // Exit interpreter.
         return INTERPRET_OK;

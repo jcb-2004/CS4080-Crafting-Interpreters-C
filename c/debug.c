@@ -101,6 +101,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return jumpInstruction("OP_LOOP", -1, chunk, offset);
     case OP_RETURN:
       return simpleInstruction("OP_RETURN", offset);
+	case OP_DUP: //Chapter 23 Challenge 1
+	  return simpleInstruction("OP_DUP", offset);
     default:
       printf("Unknown opcode %d\n", instruction);
       return offset + 1;
