@@ -45,10 +45,18 @@ typedef struct {
   int depth;
 } Local;
 
+//Chapter 23 Challenge 2
+typedef struct Loop {
+  int start;
+  int scopeDepth;
+  struct Loop* enclosing;
+} Loop;
+
 typedef struct {
   Local locals[UINT8_COUNT];
   int localCount;
   int scopeDepth;
+  Loop* currentLoop; //Chapter 23 Challenge 2
 } Compiler;
 
 Parser parser;
@@ -173,6 +181,7 @@ static void patchJump(int offset) {
 static void initCompiler(Compiler* compiler) {
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
+  compiler->currentLoop = NULL; //Chapter 23 Challenge 2
   current = compiler;
 }
 
@@ -461,9 +470,11 @@ static void expressionStatement() {
   emitByte(OP_POP);
 }
 
+//Chapter 23 Challenge 2
 static void forStatement() {
   beginScope();
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+
   if (match(TOKEN_SEMICOLON)) {
     // No initializer.
   } else if (match(TOKEN_VAR)) {
@@ -474,17 +485,18 @@ static void forStatement() {
 
   int loopStart = currentChunk()->count;
   int exitJump = -1;
+
   if (!match(TOKEN_SEMICOLON)) {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
 
-    // Jump out of the loop if the condition is false.
     exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP); // Condition.
+    emitByte(OP_POP);
   }
-	
+
   if (!match(TOKEN_RIGHT_PAREN)) {
     int bodyJump = emitJump(OP_JUMP);
+
     int incrementStart = currentChunk()->count;
     expression();
     emitByte(OP_POP);
@@ -495,14 +507,23 @@ static void forStatement() {
     patchJump(bodyJump);
   }
 
+  Loop loop;
+  loop.start = loopStart;
+  loop.scopeDepth = current->scopeDepth;
+  loop.enclosing = current->currentLoop;
+  current->currentLoop = &loop;
+
   statement();
+
   emitLoop(loopStart);
-	
+
+  current->currentLoop = loop.enclosing;
+
   if (exitJump != -1) {
     patchJump(exitJump);
-    emitByte(OP_POP); // Condition.
+    emitByte(OP_POP);
   }
-	
+
   endScope();
 }
 
@@ -532,6 +553,14 @@ static void printStatement() {
 
 static void whileStatement() {
   int loopStart = currentChunk()->count;
+
+  //Chapter 23 Challenge 2
+  Loop loop;
+  loop.start = loopStart;
+  loop.scopeDepth = current->scopeDepth;
+  loop.enclosing = current->currentLoop;
+  current->currentLoop = &loop;
+
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -543,6 +572,28 @@ static void whileStatement() {
 
   patchJump(exitJump);
   emitByte(OP_POP);
+
+  //Chapter 23 Challenge 2
+  current->currentLoop = loop.enclosing;
+}
+
+//Chapter 23 Challenge 2
+static void continueStatement() {
+  if (current->currentLoop == NULL) {
+    error("Can't use 'continue' outside of a loop.");
+    consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+    return;
+  }
+
+  consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+
+  for (int i = current->localCount - 1;
+       i >= 0 && current->locals[i].depth > current->currentLoop->scopeDepth;
+       i--) {
+    emitByte(OP_POP);
+  }
+
+  emitLoop(current->currentLoop->start);
 }
 
 static void synchronize() {
@@ -559,6 +610,7 @@ static void synchronize() {
       case TOKEN_WHILE:
       case TOKEN_PRINT:
       case TOKEN_RETURN:
+	  case TOKEN_CONTINUE: //Chapter 23 Challenge 2
         return;
 
       default:
@@ -586,6 +638,8 @@ static void statement() {
     forStatement();
   } else if (match(TOKEN_IF)) {
     ifStatement();
+  } else if (match(TOKEN_CONTINUE)) { //Chapter 23 Challenge 2
+    continueStatement();
   } else if (match(TOKEN_WHILE)) {
     whileStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
