@@ -1,0 +1,6 @@
+print clock();
+print clock(1);
+
+//Expected output:
+//Line 1 compiles fine
+//Error when compiling line 2 since clock() expects 0 arguments but is given 1 argument.
