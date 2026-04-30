@@ -37,7 +37,7 @@ done
 
 echo
 echo "⚙️ Running gcc..."
-gcc -Wall -Wextra -Wpedantic -std=c17 -g "${C_FILES[@]}" -o clox
+gcc -Wall -Wextra -Wpedantic -std=c17 -g "${C_FILES[@]}" -o clox -lm
 
 echo
 echo "✅ Build complete."

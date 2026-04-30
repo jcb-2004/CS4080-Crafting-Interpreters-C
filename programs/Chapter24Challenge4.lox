@@ -1,0 +1,15 @@
+//sqrt() - square root
+print sqrt(9);
+print sqrt("fish");
+
+//len() - length of a string
+print len("Crafting Interpreters");
+print len(false);
+
+//Expected output:
+//3
+//nil
+//21
+//nil
+
+//note: these functions return nil when they are given illegal inputs

@@ -1,3 +1,4 @@
+#include <math.h> //Chapter 24 Challenge 4
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,6 +15,38 @@ VM vm;
 
 static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
+//Chapter 24 Challenge 4
+static Value sqrtNative(int argCount, Value* args) {
+  if (argCount != 1) {
+    return NIL_VAL;
+  }
+
+  if (!IS_NUMBER(args[0])) {
+    return NIL_VAL;
+  }
+
+  double value = AS_NUMBER(args[0]);
+
+  if (value < 0) {
+    return NIL_VAL;
+  }
+
+  return NUMBER_VAL(sqrt(value));
+}
+
+//Chapter 24 Challenge 4
+static Value lenNative(int argCount, Value* args) {
+  if (argCount != 1) {
+    return NIL_VAL;
+  }
+
+  if (!IS_STRING(args[0])) {
+    return NIL_VAL;
+  }
+
+  return NUMBER_VAL(AS_STRING(args[0])->length);
 }
 
 static void resetStack() {
@@ -60,6 +93,8 @@ void initVM() {
   initTable(&vm.strings);
 	
   defineNative("clock", clockNative);
+  defineNative("sqrt", sqrtNative); //Chapter 24 Challenge 4
+  defineNative("len", lenNative); //Chapter 24 Challenge 4
 }
 
 void freeVM() {
