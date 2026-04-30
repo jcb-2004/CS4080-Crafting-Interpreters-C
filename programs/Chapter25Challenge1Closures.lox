@@ -1,0 +1,22 @@
+fun makeAdder(x) {
+  fun add(y) {
+    return x + y;
+  }
+
+  return add;
+}
+
+var addOne = makeAdder(1);
+
+var start = clock();
+
+var i = 0;
+var total = 0;
+
+while (i < 1000000) {
+  total = addOne(total);
+  i = i + 1;
+}
+
+print total;
+print clock() - start;

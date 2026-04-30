@@ -10,6 +10,7 @@
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
 typedef struct {
+  ObjFunction* function; //Chapter 25 Challenge 1
   ObjClosure* closure;
   uint8_t* ip;
   Value* slots;

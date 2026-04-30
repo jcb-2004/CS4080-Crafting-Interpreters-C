@@ -1,0 +1,16 @@
+fun add(a, b) {
+  return a + b;
+}
+
+var start = clock();
+
+var i = 0;
+var total = 0;
+
+while (i < 1000000) {
+  total = add(total, i);
+  i = i + 1;
+}
+
+print total;
+print clock() - start;
