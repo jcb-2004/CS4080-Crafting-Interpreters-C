@@ -12,8 +12,10 @@
 
 VM vm; 
 
-static Value clockNative(int argCount, Value* args) {
-  return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+//Chapter 24 Challenge 3
+static bool clockNative(int argCount, Value* args, Value* result) {
+  *result = NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+  return true;
 }
 
 static void resetStack() {
@@ -106,13 +108,19 @@ static bool callValue(Value callee, int argCount) {
     switch (OBJ_TYPE(callee)) {
       case OBJ_FUNCTION: 
         return call(AS_FUNCTION(callee), argCount);
-      case OBJ_NATIVE: {
-        NativeFn native = AS_NATIVE(callee);
-        Value result = native(argCount, vm.stackTop - argCount);
-        vm.stackTop -= argCount + 1;
-        push(result);
-        return true;
-      }
+	  //Chapter 24 Challenge 3
+	  case OBJ_NATIVE: {
+	    NativeFn native = AS_NATIVE(callee);
+	    Value result;
+
+	    if (!native(argCount, vm.stackTop - argCount, &result)) {
+		  return false;
+	    }
+
+	    vm.stackTop -= argCount + 1;
+	    push(result);
+	    return true;
+	  }
       default:
         break; // Non-callable object type.
     }
