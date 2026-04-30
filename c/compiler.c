@@ -597,30 +597,52 @@ static void expressionStatement() {
   emitByte(OP_POP);
 }
 
+//Chapter 25 Challenge 2
 static void forStatement() {
   beginScope();
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+
+  bool hasLoopVariable = false;
+  Token loopVariable;
+  uint8_t loopVariableSlot = 0;
+
   if (match(TOKEN_SEMICOLON)) {
-    // No initializer.
   } else if (match(TOKEN_VAR)) {
-    varDeclaration();
+    consume(TOKEN_IDENTIFIER, "Expect variable name.");
+
+    loopVariable = parser.previous;
+
+    declareVariable();
+
+    if (match(TOKEN_EQUAL)) {
+      expression();
+    } else {
+      emitByte(OP_NIL);
+    }
+
+    consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+    defineVariable(0);
+
+    hasLoopVariable = true;
+    loopVariableSlot = (uint8_t)(current->localCount - 1);
   } else {
     expressionStatement();
   }
 
   int loopStart = currentChunk()->count;
+
   int exitJump = -1;
   if (!match(TOKEN_SEMICOLON)) {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
 
-    // Jump out of the loop if the condition is false.
     exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP); // Condition.
+    emitByte(OP_POP);
   }
-	
+
   if (!match(TOKEN_RIGHT_PAREN)) {
     int bodyJump = emitJump(OP_JUMP);
+
     int incrementStart = currentChunk()->count;
     expression();
     emitByte(OP_POP);
@@ -631,14 +653,34 @@ static void forStatement() {
     patchJump(bodyJump);
   }
 
-  statement();
+  if (hasLoopVariable) {
+    beginScope();
+
+    emitBytes(OP_GET_LOCAL, loopVariableSlot);
+
+    addLocal(loopVariable);
+    markInitialized();
+
+    uint8_t iterationVariableSlot = (uint8_t)(current->localCount - 1);
+
+    statement();
+
+    emitBytes(OP_GET_LOCAL, iterationVariableSlot);
+    emitBytes(OP_SET_LOCAL, loopVariableSlot);
+    emitByte(OP_POP);
+
+    endScope();
+  } else {
+    statement();
+  }
+
   emitLoop(loopStart);
-	
+
   if (exitJump != -1) {
     patchJump(exitJump);
-    emitByte(OP_POP); // Condition.
+    emitByte(OP_POP);
   }
-	
+
   endScope();
 }
 

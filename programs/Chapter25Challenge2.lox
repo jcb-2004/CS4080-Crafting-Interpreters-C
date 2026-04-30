@@ -1,0 +1,35 @@
+var a;
+var b;
+var c;
+
+for (var i = 0; i < 3; i = i + 1) {
+  fun capture() {
+    print i;
+  }
+
+  if (i == 0) {
+    a = capture;
+  }
+
+  if (i == 1) {
+    b = capture;
+  }
+
+  if (i == 2) {
+    c = capture;
+  }
+}
+
+a();
+b();
+c();
+
+//Expected output before challenge implementation:
+//3
+//3
+//3
+
+//Expected output after challenge implementation:
+//1
+//2
+//3
