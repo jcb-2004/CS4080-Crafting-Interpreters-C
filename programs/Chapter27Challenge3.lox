@@ -1,0 +1,14 @@
+class User {}
+
+var user = User();
+user.name = "Billy Bronco";
+
+print user.name;
+
+deleteField(user, "name");
+
+print user.name;
+
+//Expected output:
+//Billy Bronco
+//Runtime error because name is not a property that exists anymore

@@ -16,6 +16,19 @@ static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
+//Chapter 27 Challenge 3
+static Value deleteFieldNative(int argCount, Value* args) {
+  if (argCount != 2) return NIL_VAL;
+  if (!IS_INSTANCE(args[0])) return NIL_VAL;
+  if (!IS_STRING(args[1])) return NIL_VAL;
+
+  ObjInstance* instance = AS_INSTANCE(args[0]);
+  ObjString* name = AS_STRING(args[1]);
+
+  tableDelete(&instance->fields, name);
+  return NIL_VAL;
+}
+
 static void resetStack() {
   vm.stackTop = vm.stack;
   vm.frameCount = 0;
@@ -67,6 +80,7 @@ void initVM() {
   initTable(&vm.strings);
 	
   defineNative("clock", clockNative);
+  defineNative("deleteField", deleteFieldNative); //Chapter 27 Challenge 3
 }
 
 void freeVM() {
