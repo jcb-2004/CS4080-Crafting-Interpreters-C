@@ -28,6 +28,7 @@ typedef struct {
   size_t bytesAllocated;
   size_t nextGC;
   Obj* objects;
+  Obj* sweepCursor; //Chapter 26 Challenge 3
   int grayCount;
   int grayCapacity;
   Obj** grayStack;

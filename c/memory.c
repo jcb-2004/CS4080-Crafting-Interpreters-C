@@ -11,12 +11,16 @@
 
 #define GC_HEAP_GROW_FACTOR 2
 
+static void sweepStep(); //Chapter 26 Challenge 3
+
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
   vm.bytesAllocated += newSize - oldSize;
   if (newSize > oldSize) {
 #ifdef DEBUG_STRESS_GC
     collectGarbage();
 #endif
+	  
+    sweepStep(); //Chapter 26 Challenge 3
 	  
     if (vm.bytesAllocated > vm.nextGC) {
       collectGarbage();
@@ -155,25 +159,43 @@ static void traceReferences() {
   }
 }
 
-static void sweep() {
-  Obj* previous = NULL;
-  Obj* object = vm.objects;
-  while (object != NULL) {
+//Chapter 26 Challenge 3
+static void beginSweep() {
+  vm.sweepCursor = vm.objects;
+}
+
+//Chapter 26 Challenge 3
+static void sweepStep() {
+  int count = 0;
+
+  while (vm.sweepCursor != NULL && count < 8) {
+    Obj* object = vm.sweepCursor;
+
     if (object->isMarked) {
       object->isMarked = false;
-      previous = object;
-      object = object->next;
+      vm.sweepCursor = object->next;
     } else {
       Obj* unreached = object;
-      object = object->next;
+      vm.sweepCursor = object->next;
+
+      Obj* previous = NULL;
+      Obj* current = vm.objects;
+
+      while (current != unreached) {
+        previous = current;
+        current = current->next;
+      }
+
       if (previous != NULL) {
-        previous->next = object;
+        previous->next = unreached->next;
       } else {
-        vm.objects = object;
+        vm.objects = unreached->next;
       }
 
       freeObject(unreached);
     }
+
+    count++;
   }
 }
 
@@ -182,11 +204,16 @@ void collectGarbage() {
   printf("-- gc begin\n");
   size_t before = vm.bytesAllocated;
 #endif
+
+  //Chapter 26 Challenge 3
+  while (vm.sweepCursor != NULL) {
+    sweepStep();
+  }
 	
   markRoots();
   traceReferences();
   tableRemoveWhite(&vm.strings);
-  sweep();
+  beginSweep(); //Chapter 26 Challenge 3
 	
   vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
 	
