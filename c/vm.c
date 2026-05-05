@@ -16,6 +16,36 @@ static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
+//Chapter 27 Challenge 2
+static Value getFieldNative(int argCount, Value* args) {
+  if (argCount != 2) return BOOL_VAL(false);
+  if (!IS_INSTANCE(args[0])) return BOOL_VAL(false);
+  if (!IS_STRING(args[1])) return BOOL_VAL(false);
+
+  ObjInstance* instance = AS_INSTANCE(args[0]);
+  ObjString* name = AS_STRING(args[1]);
+
+  Value value;
+  if (!tableGet(&instance->fields, name, &value)) {
+    return NIL_VAL;
+  }
+
+  return value;
+}
+
+//Chapter 27 Challenge 2
+static Value setFieldNative(int argCount, Value* args) {
+  if (argCount != 3) return BOOL_VAL(false);
+  if (!IS_INSTANCE(args[0])) return BOOL_VAL(false);
+  if (!IS_STRING(args[1])) return BOOL_VAL(false);
+
+  ObjInstance* instance = AS_INSTANCE(args[0]);
+  ObjString* name = AS_STRING(args[1]);
+
+  tableSet(&instance->fields, name, args[2]);
+  return args[2];
+}
+
 static void resetStack() {
   vm.stackTop = vm.stack;
   vm.frameCount = 0;
@@ -67,6 +97,10 @@ void initVM() {
   initTable(&vm.strings);
 	
   defineNative("clock", clockNative);
+	
+  //Chapter 27 Challenge 2
+  defineNative("getField", getFieldNative);
+  defineNative("setField", setFieldNative);
 }
 
 void freeVM() {

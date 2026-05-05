@@ -1,0 +1,13 @@
+class Test {}
+
+var test = Test();
+
+var field = "na" + "me";
+setField(test, field, "example");
+
+print test.name;
+print getField(test, field);
+
+//Expected output:
+//example
+//example
