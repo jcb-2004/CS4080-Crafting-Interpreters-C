@@ -1,0 +1,20 @@
+class Bag {}
+
+var bag = Bag();
+bag.name = "satchel";
+
+print hasField(bag, "name");
+print hasField(bag, "missing");
+
+if (hasField(bag, "missing")) {
+  print bag.missing;
+} else {
+  print "No such field.";
+}
+
+//Explanation: the Bag class has the field "name" but not the field "missing",
+//             so hasField should return true for "name" and false for "missing" fields in the bag class.
+//Expected output:
+//true
+//false
+//No such field
