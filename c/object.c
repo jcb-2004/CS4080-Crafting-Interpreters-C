@@ -52,6 +52,7 @@ ObjClosure* newClosure(ObjFunction* function) {
   closure->function = function;
   closure->upvalues = upvalues;
   closure->upvalueCount = function->upvalueCount;
+  closure->owner = NULL; //Chapter 29 Challenge 1
   return closure;
 }
 
@@ -68,6 +69,7 @@ ObjInstance* newInstance(ObjClass* klass) {
   ObjInstance* instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
   instance->klass = klass;
   initTable(&instance->fields);
+  initTable(&instance->initFields); //Chapter 29 Challenge 1
   return instance;
 }
 

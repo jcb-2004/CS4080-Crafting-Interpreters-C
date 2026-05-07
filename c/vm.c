@@ -229,9 +229,16 @@ static void closeUpvalues(Value* last) {
   }
 }
 
+//Chapter 29 Challenge 1
+static bool isInitializerCall(ObjClosure* closure) {
+  return closure->owner != NULL &&
+         closure->function->name == vm.initString;
+}
+
 static void defineMethod(ObjString* name) {
   Value method = peek(0);
   ObjClass* klass = AS_CLASS(peek(1));
+  AS_CLOSURE(method)->owner = klass; //Chapter 29 Challenge 1
   tableSet(&klass->methods, name, method);
   pop();
 }
@@ -369,18 +376,44 @@ static InterpretResult run() {
         }
         break;
       }
-      case OP_SET_PROPERTY: {
-        if (!IS_INSTANCE(peek(1))) {
-          runtimeError("Only instances have fields.");
-          return INTERPRET_RUNTIME_ERROR;
-        }
-        ObjInstance* instance = AS_INSTANCE(peek(1));
-        tableSet(&instance->fields, READ_STRING(), peek(0));
-        Value value = pop();
-        pop();
-        push(value);
-        break;
-      }
+	  //Chapter 29 Challenge 1
+	  case OP_SET_PROPERTY: {
+	    if (!IS_INSTANCE(peek(1))) {
+		  runtimeError("Only instances have fields.");
+		  return INTERPRET_RUNTIME_ERROR;
+	    }  
+
+	    ObjInstance* instance = AS_INSTANCE(peek(1));
+	    ObjString* name = READ_STRING();
+	    CallFrame* currentFrame = &vm.frames[vm.frameCount - 1];
+	    ObjClosure* currentClosure = currentFrame->closure;
+	    if (isInitializerCall(currentClosure)) {
+		  Value existingOwner;
+
+		  if (tableGet(&instance->initFields, name, &existingOwner)) {
+		    ObjClass* existingClass = AS_CLASS(existingOwner);
+		    ObjClass* currentClass = currentClosure->owner;
+
+		    if (existingClass != currentClass) {
+			  runtimeError(
+				  "Initializer for class '%s' cannot initialize field '%s' because it was already initialized by class '%s'.",
+				  currentClass->name->chars,
+				  name->chars,
+				  existingClass->name->chars);
+			  return INTERPRET_RUNTIME_ERROR;
+		    }
+		  } else {
+		    tableSet(&instance->initFields, name, OBJ_VAL(currentClosure->owner));
+		  }
+	    }
+
+	    tableSet(&instance->fields, name, peek(0));
+
+	    Value value = pop();
+	    pop();
+	    push(value);
+	    break;
+	  }
       case OP_GET_SUPER: {
         ObjString* name = READ_STRING();
         ObjClass* superclass = AS_CLASS(pop());

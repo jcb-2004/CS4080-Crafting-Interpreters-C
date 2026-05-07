@@ -1,0 +1,17 @@
+class Base {
+  init() {
+    this.value = "base";
+  }
+}
+
+class Derived < Base {
+  init() {
+    super.init();
+    this.value = "derived";
+  }
+}
+
+Derived();
+
+//Expected output:
+//Runtime error when the Derived subclass steps on the value field already initialized by the Base superclass

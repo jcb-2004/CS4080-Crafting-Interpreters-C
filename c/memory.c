@@ -95,6 +95,7 @@ static void freeObject(Obj* object) {
     case OBJ_INSTANCE: {
       ObjInstance* instance = (ObjInstance*)object;
       freeTable(&instance->fields);
+	  freeTable(&instance->initFields); //Chapter 29 Challenge 1
       FREE(ObjInstance, object);
       break;
     }
@@ -156,6 +157,11 @@ static void blackenObject(Obj* object) {
     case OBJ_CLOSURE: {
       ObjClosure* closure = (ObjClosure*)object;
       markObject((Obj*)closure->function);
+	  //Chapter 29 Challenge 1
+	  if (closure->owner != NULL) {
+		markObject((Obj*)closure->owner);
+	  }
+		
       for (int i = 0; i < closure->upvalueCount; i++) {
         markObject((Obj*)closure->upvalues[i]);
       }
@@ -171,6 +177,7 @@ static void blackenObject(Obj* object) {
       ObjInstance* instance = (ObjInstance*)object;
       markObject((Obj*)instance->klass);
       markTable(&instance->fields);
+	  markTable(&instance->initFields); //Chapter 29 Challenge 1
       break;
     }
     case OBJ_UPVALUE:

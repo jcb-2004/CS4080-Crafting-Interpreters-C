@@ -72,23 +72,28 @@ typedef struct ObjUpvalue {
   struct ObjUpvalue* next;
 } ObjUpvalue;
 
+typedef struct ObjClass ObjClass; //Chapter 29 Challenge 1
+
 typedef struct {
   Obj obj;
   ObjFunction* function;
   ObjUpvalue** upvalues;
   int upvalueCount;
+  ObjClass* owner; //Chapter 29 Challenge 1
 } ObjClosure;
 
-typedef struct {
+//Chapter 29 Challenge 1
+struct ObjClass{
   Obj obj;
   ObjString* name;
   Table methods;
-} ObjClass;
+};
 
 typedef struct {
   Obj obj;
   ObjClass* klass;
   Table fields; 
+  Table initFields; //Chapter 29 Challenge 1
 } ObjInstance;
 
 typedef struct {
