@@ -1,0 +1,17 @@
+class test {
+  init(a) {
+    this.a = a;
+  }
+}
+
+var start = clock();
+
+var i = 0;
+while (i < 5000000) {
+  test(i);
+  i = i + 1;
+}
+
+print clock() - start;
+
+//This benchmark times running init() 5,000,000 times.

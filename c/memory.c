@@ -150,6 +150,7 @@ static void blackenObject(Obj* object) {
     case OBJ_CLASS: {
       ObjClass* klass = (ObjClass*)object;
       markObject((Obj*)klass->name);
+      markValue(klass->initializer); //Chapter 28 Challenge 1
       markTable(&klass->methods);
       break;
     }

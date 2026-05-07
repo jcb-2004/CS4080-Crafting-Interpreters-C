@@ -37,6 +37,7 @@ ObjBoundMethod* newBoundMethod(Value receiver,
 ObjClass* newClass(ObjString* name) {
   ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name; 
+  klass->initializer = NIL_VAL; //Chapter 28 Challenge 1
   initTable(&klass->methods);
   return klass;
 }

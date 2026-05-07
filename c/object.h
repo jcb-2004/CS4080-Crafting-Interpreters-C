@@ -82,6 +82,7 @@ typedef struct {
 typedef struct {
   Obj obj;
   ObjString* name;
+  Value initializer; //Chapter 28 Challenge 1
   Table methods;
 } ObjClass;
 
