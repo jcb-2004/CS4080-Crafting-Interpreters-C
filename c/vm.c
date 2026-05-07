@@ -269,6 +269,7 @@ static InterpretResult run() {
     (frame->closure->function->chunk.constants.values[READ_BYTE()])
 	
 #define READ_STRING() AS_STRING(READ_CONSTANT())
+//Chapter 30 Challenge 1
 #define BINARY_OP(valueType, op) \
     do { \
       if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -276,8 +277,7 @@ static InterpretResult run() {
         return INTERPRET_RUNTIME_ERROR; \
       } \
       double b = AS_NUMBER(pop()); \
-      double a = AS_NUMBER(pop()); \
-      push(valueType(a op b)); \
+      vm.stackTop[-1] = valueType(AS_NUMBER(vm.stackTop[-1]) op b); \
     } while (false)
 
   for (;;) {
@@ -401,10 +401,9 @@ static InterpretResult run() {
       case OP_ADD: {
         if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
           concatenate();
-        } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
-          double b = AS_NUMBER(pop());
-          double a = AS_NUMBER(pop());
-          push(NUMBER_VAL(a + b));
+        } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) { //Chapter 30 Challenge 1
+          double b = AS_NUMBER(pop()); //Chapter 30 Challenge 1
+          vm.stackTop[-1] = NUMBER_VAL(AS_NUMBER(vm.stackTop[-1]) + b); //Chapter 30 Challenge 1
         } else {
           runtimeError(
               "Operands must be two numbers or two strings.");
