@@ -37,7 +37,9 @@ ObjBoundMethod* newBoundMethod(Value receiver,
 ObjClass* newClass(ObjString* name) {
   ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name; 
+  klass->superclass = NULL; //Chapter 29 Challenge 3
   initTable(&klass->methods);
+  initTable(&klass->ownMethods); //Chapter 29 Challenge 3
   return klass;
 }
 
@@ -52,6 +54,7 @@ ObjClosure* newClosure(ObjFunction* function) {
   closure->function = function;
   closure->upvalues = upvalues;
   closure->upvalueCount = function->upvalueCount;
+  closure->owner = NULL; //Chapter 29 Challenge 3
   return closure;
 }
 

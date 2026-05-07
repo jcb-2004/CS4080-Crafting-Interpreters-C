@@ -36,6 +36,7 @@ typedef enum {
   OP_CALL,
   OP_INVOKE,
   OP_SUPER_INVOKE,
+  OP_INNER, //Chapter 29 Challenge 3
   OP_CLOSURE,
   OP_CLOSE_UPVALUE,
   OP_RETURN,

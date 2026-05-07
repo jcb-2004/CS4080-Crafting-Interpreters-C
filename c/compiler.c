@@ -275,6 +275,8 @@ static void statement();
 static void declaration();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
+static void inner_(bool canAssign); //Chapter 29 Challenge 3
+static uint8_t objStringConstant(ObjString* string); //Chapter 29 Challenge 3
 
 static void grouping(bool canAssign) {
   expression();
@@ -336,27 +338,33 @@ static Token syntheticToken(const char* text) {
   return token;
 }
 
-static void super_(bool canAssign) {
+//Chapter 29 Challenge 3
+static void inner_(bool canAssign) {
   if (currentClass == NULL) {
-    error("Can't use 'super' outside of a class.");
-  } else if (!currentClass->hasSuperclass) {
-    error("Can't use 'super' in a class with no superclass.");
+    error("Can't use 'inner' outside of a class.");
+    return;
   }
-	
-  consume(TOKEN_DOT, "Expect '.' after 'super'.");
-  consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
-  uint8_t name = identifierConstant(&parser.previous);
-	
+
+  if (current->type != TYPE_METHOD &&
+      current->type != TYPE_INITIALIZER) {
+    error("Can't use 'inner' outside of a method.");
+    return;
+  }
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'inner'.");
+
   namedVariable(syntheticToken("this"), false);
-  if (match(TOKEN_LEFT_PAREN)) {
-    uint8_t argCount = argumentList();
-    namedVariable(syntheticToken("super"), false);
-    emitBytes(OP_SUPER_INVOKE, name);
-    emitByte(argCount);
-  } else {
-    namedVariable(syntheticToken("super"), false);
-    emitBytes(OP_GET_SUPER, name);
-  }
+
+  uint8_t argCount = argumentList();
+
+  uint8_t name = objStringConstant(current->function->name);
+  emitBytes(OP_INNER, name);
+  emitByte(argCount);
+}
+
+//Chapter 29 Challenge 3
+static void super_(bool canAssign) {
+  error("Use 'inner' instead of 'super'.");
 }
 
 static void this_(bool canAssign) {
@@ -412,6 +420,7 @@ ParseRule rules[] = {
   [TOKEN_FOR]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FUN]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_INNER]         = {inner_,   NULL,   PREC_NONE}, //Chapter 29 Challenge 3
   [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
   [TOKEN_OR]            = {NULL,     or_,    PREC_OR},
   [TOKEN_PRINT]         = {NULL,     NULL,   PREC_NONE},
@@ -450,6 +459,11 @@ static void parsePrecedence(Precedence precedence) {
 static uint8_t identifierConstant(Token* name) {
   return makeConstant(OBJ_VAL(copyString(name->start,
                                          name->length)));
+}
+
+//Chapter 29 Challenge 3
+static uint8_t objStringConstant(ObjString* string) {
+  return makeConstant(OBJ_VAL(string));
 }
 
 static bool identifiersEqual(Token* a, Token* b) {

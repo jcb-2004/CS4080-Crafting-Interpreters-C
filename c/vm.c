@@ -151,6 +151,78 @@ static bool callValue(Value callee, int argCount) {
   runtimeError("Can only call functions and classes.");
   return false;
 }
+
+//Chapter 29 Challenge 3
+static bool findInnerMethod(ObjClass* receiverClass,
+                            ObjClass* currentClass,
+                            ObjString* name,
+                            ObjClosure** method) {
+  ObjClosure* candidate = NULL;
+  ObjClass* klass = receiverClass;
+
+  while (klass != NULL && klass != currentClass) {
+    Value value;
+
+    if (tableGet(&klass->ownMethods, name, &value)) {
+      candidate = AS_CLOSURE(value);
+    }
+
+    klass = klass->superclass;
+  }
+
+  if (klass == NULL) {
+    runtimeError("Class '%s' is not in receiver's inheritance chain.",
+                 currentClass->name->chars);
+    return false;
+  }
+
+  if (candidate == NULL) {
+    *method = NULL;
+    return true;
+  }
+
+  *method = candidate;
+  return true;
+}
+
+//Chapter 29 Challenge 3
+static bool invokeInner(ObjString* name, int argCount) {
+  Value receiver = peek(argCount);
+
+  if (!IS_INSTANCE(receiver)) {
+    runtimeError("Only instances have inner methods.");
+    return false;
+  }
+
+  CallFrame* frame = &vm.frames[vm.frameCount - 1];
+  ObjClosure* currentClosure = frame->closure;
+
+  if (currentClosure->owner == NULL) {
+    runtimeError("Can't use 'inner' outside of a method.");
+    return false;
+  }
+
+  ObjInstance* instance = AS_INSTANCE(receiver);
+
+  ObjClosure* method;
+  if (!findInnerMethod(instance->klass,
+                       currentClosure->owner,
+                       name,
+                       &method)) {
+    return false;
+  }
+
+  if (method == NULL) {
+    for (int i = 0; i < argCount + 1; i++) {
+      pop();
+    }
+
+    push(NIL_VAL);
+    return true;
+  }
+
+  return call(method, argCount);
+}
 	
 static bool invokeFromClass(ObjClass* klass, ObjString* name,
                             int argCount) {
@@ -229,10 +301,21 @@ static void closeUpvalues(Value* last) {
   }
 }
 
+//Chapter 29 Challenge 3
 static void defineMethod(ObjString* name) {
   Value method = peek(0);
   ObjClass* klass = AS_CLASS(peek(1));
-  tableSet(&klass->methods, name, method);
+
+  AS_CLOSURE(method)->owner = klass;
+  tableSet(&klass->ownMethods, name, method);
+  Value inheritedMethod;
+  bool inherited =
+      klass->superclass != NULL &&
+      tableGet(&klass->superclass->methods, name, &inheritedMethod);
+  if (!inherited) {
+    tableSet(&klass->methods, name, method);
+  }
+
   pop();
 }
 
@@ -472,6 +555,18 @@ static InterpretResult run() {
         frame = &vm.frames[vm.frameCount - 1];
         break;
       }
+	  //Chapter 29 Challenge 3
+	  case OP_INNER: {
+	    ObjString* method = READ_STRING();
+	    int argCount = READ_BYTE();
+
+	    if (!invokeInner(method, argCount)) {
+		  return INTERPRET_RUNTIME_ERROR;
+	    }
+
+	    frame = &vm.frames[vm.frameCount - 1];
+	    break;
+	  }
       case OP_CLOSURE: {
         ObjFunction* function = AS_FUNCTION(READ_CONSTANT());
         ObjClosure* closure = newClosure(function);
@@ -516,9 +611,12 @@ static InterpretResult run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 		  
-        ObjClass* subclass = AS_CLASS(peek(0));
-        tableAddAll(&AS_CLASS(superclass)->methods,
-                    &subclass->methods);
+		//Chapter 29 Challenge 3
+	    ObjClass* superclassClass = AS_CLASS(superclass);
+	    ObjClass* subclass = AS_CLASS(peek(0));
+	    subclass->superclass = superclassClass;
+	    tableAddAll(&superclassClass->methods, &subclass->methods);
+		  
         pop(); // Subclass.
         break;
       }

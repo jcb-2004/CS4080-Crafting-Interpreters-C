@@ -12,7 +12,7 @@ typedef struct {
 
 Scanner scanner;
 
-//These declarations aren't in the book, but the compiler keeps throwing errosr without them. It may be that the author used a different, less strict compiler.
+//These declarations aren't in the book, but the compiler keeps throwing errors without them. It may be that the author used a different, less strict compiler.
 static bool isAtEnd();
 static char advance();
 static char peek();
@@ -178,7 +178,15 @@ static TokenType identifierType() {
         }
       }
       break;
-    case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
+	//Chapter 29 Challenge 3
+	case 'i':
+	  if (scanner.current - scanner.start > 1) {
+		switch (scanner.start[1]) {
+		  case 'f': return checkKeyword(1, 1, "f", TOKEN_IF);
+		  case 'n': return checkKeyword(2, 3, "ner", TOKEN_INNER);
+		}
+	  }
+	  break;
     case 'n': return checkKeyword(1, 2, "il", TOKEN_NIL);
     case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);
     case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);

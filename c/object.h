@@ -26,6 +26,8 @@
 #define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->chars)
 
+typedef struct ObjClass ObjClass; //Chapter 29 Challenge 3
+
 typedef enum {
   OBJ_BOUND_METHOD,
   OBJ_CLASS,
@@ -77,13 +79,16 @@ typedef struct {
   ObjFunction* function;
   ObjUpvalue** upvalues;
   int upvalueCount;
+  ObjClass* owner; //Chapter 29 Challenge 3
 } ObjClosure;
 
-typedef struct {
+struct ObjClass {
   Obj obj;
   ObjString* name;
+  ObjClass* superclass; //Chapter 29 Challenge 3
   Table methods;
-} ObjClass;
+  Table ownMethods; //Chapter 29 Challenge 3
+};
 
 typedef struct {
   Obj obj;

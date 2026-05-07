@@ -76,6 +76,7 @@ static void freeObject(Obj* object) {
     case OBJ_CLASS: {
       ObjClass* klass = (ObjClass*)object;
       freeTable(&klass->methods);
+	  freeTable(&klass->ownMethods); //Chapter 29 Challenge 3
       FREE(ObjClass, object);
       break;
     } 
@@ -150,12 +151,23 @@ static void blackenObject(Obj* object) {
     case OBJ_CLASS: {
       ObjClass* klass = (ObjClass*)object;
       markObject((Obj*)klass->name);
+	  //Chapter 29 Challenge 3
+	  if (klass->superclass != NULL) {
+		markObject((Obj*)klass->superclass);
+	  }
+		
       markTable(&klass->methods);
+	  markTable(&klass->ownMethods); //Chapter 29 Challenge 3
       break;
     }
     case OBJ_CLOSURE: {
       ObjClosure* closure = (ObjClosure*)object;
       markObject((Obj*)closure->function);
+	  //Chapter 29 Challenge 3
+	  if (closure->owner != NULL) {
+        markObject((Obj*)closure->owner);
+      }
+		
       for (int i = 0; i < closure->upvalueCount; i++) {
         markObject((Obj*)closure->upvalues[i]);
       }

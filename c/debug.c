@@ -126,6 +126,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return invokeInstruction("OP_INVOKE", chunk, offset);
     case OP_SUPER_INVOKE:
       return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
+	//Chapter 29 Challenge 3
+	case OP_INNER:
+	  return invokeInstruction("OP_INNER", chunk, offset);
     case OP_CLOSURE: {
       offset++;
       uint8_t constant = chunk->code[offset++];
