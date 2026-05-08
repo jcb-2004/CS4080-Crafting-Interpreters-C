@@ -297,9 +297,10 @@ static void or_(bool canAssign) {
   patchJump(endJump);
 }
 
+//Chapter 30 Challenge 2
 static void string(bool canAssign) {
-  emitConstant(OBJ_VAL(copyString(parser.previous.start + 1,
-                                  parser.previous.length - 2)));
+  emitConstant(copyStringValue(parser.previous.start + 1,
+                               parser.previous.length - 2));
 }
 
 static void namedVariable(Token name, bool canAssign) {

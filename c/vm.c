@@ -241,19 +241,27 @@ static bool isFalsey(Value value) {
 }
 
 static void concatenate() {
-  ObjString* b = AS_STRING(peek(0));
-  ObjString* a = AS_STRING(peek(1));
-
-  int length = a->length + b->length;
+  //Chapter 30 Challenge 2
+  Value b = peek(0);
+  Value a = peek(1);
+  int bLength = stringValueLength(&b);
+  int aLength = stringValueLength(&a);
+  const char* bChars = stringValueChars(&b);
+  const char* aChars = stringValueChars(&a);
+	
+  //Chapter 30 Challenge 2
+  int length = aLength + bLength;
+	
   char* chars = ALLOCATE(char, length + 1);
-  memcpy(chars, a->chars, a->length);
-  memcpy(chars + a->length, b->chars, b->length);
+  //Chapter 30 Challenge 2
+  memcpy(chars, aChars, aLength);
+  memcpy(chars + aLength, bChars, bLength);
+	
   chars[length] = '\0';
 
-  ObjString* result = takeString(chars, length);
   pop();
   pop();
-  push(OBJ_VAL(result));
+  push(takeStringValue(chars, length)); //Chapter 30 Challenge 2
 }
 
 static InterpretResult run() {

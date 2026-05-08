@@ -8,6 +8,9 @@
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
 
+//Chapter 30 Challenge 2
+#define SHORT_STRING_MAX 7
+
 #ifdef NAN_BOXING
 
 #define SIGN_BIT ((uint64_t)0x8000000000000000)
@@ -56,8 +59,15 @@ typedef enum {
   VAL_BOOL,
   VAL_NIL, 
   VAL_NUMBER,
-  VAL_OBJ
+  VAL_OBJ,
+  VAL_SHORT_STRING //Chapter 30 Challenge 2
 } ValueType;
+
+//Chapter 30 Challenge 2
+typedef struct {
+  uint8_t length;
+  char chars[SHORT_STRING_MAX];
+} ShortString;
 
 typedef struct {
   ValueType type;
@@ -65,6 +75,7 @@ typedef struct {
     bool boolean;
     double number;
     Obj* obj;
+	ShortString shortString; //Chapter 30 Challenge 2
   } as; 
 } Value;
 
@@ -72,15 +83,21 @@ typedef struct {
 #define IS_NIL(value)     ((value).type == VAL_NIL)
 #define IS_NUMBER(value)  ((value).type == VAL_NUMBER)
 #define IS_OBJ(value)     ((value).type == VAL_OBJ)
+//Chapter 30 Challenge 2
+#define IS_SHORT_STRING(value) ((value).type == VAL_SHORT_STRING)
 
 #define AS_OBJ(value)     ((value).as.obj)
 #define AS_BOOL(value)    ((value).as.boolean)
 #define AS_NUMBER(value)  ((value).as.number)
+//Chapter 30 Challenge 2
+#define AS_SHORT_STRING(value) ((value).as.shortString)
 
 #define BOOL_VAL(value)   ((Value){VAL_BOOL, {.boolean = value}})
 #define NIL_VAL           ((Value){VAL_NIL, {.number = 0}})
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
 #define OBJ_VAL(object)   ((Value){VAL_OBJ, {.obj = (Obj*)object}})
+//Chapter 30 Challenge 2
+#define SHORT_STRING_VAL(chars, length) shortStringValue(chars, length)
 
 #endif
 
@@ -90,6 +107,7 @@ typedef struct {
   Value* values;
 } ValueArray;
 
+Value shortStringValue(const char* chars, int length); //Chapter 30 Challenge 2
 bool valuesEqual(Value a, Value b);
 void initValueArray(ValueArray* array);
 void writeValueArray(ValueArray* array, Value value);

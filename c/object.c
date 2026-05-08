@@ -123,6 +123,44 @@ ObjString* copyString(const char* chars, int length) {
   return allocateString(heapChars, length, hash);
 }
 
+//Chapter 30 Challenge 2
+int stringValueLength(const Value* value) {
+  if (IS_SHORT_STRING(*value)) {
+    return AS_SHORT_STRING(*value).length;
+  }
+
+  return AS_STRING(*value)->length;
+}
+
+//Chapter 30 Challenge 2
+const char* stringValueChars(const Value* value) {
+  if (IS_SHORT_STRING(*value)) {
+    return AS_SHORT_STRING(*value).chars;
+  }
+
+  return AS_STRING(*value)->chars;
+}
+
+//Chapter 30 Challenge 2
+Value takeStringValue(char* chars, int length) {
+  if (length <= SHORT_STRING_MAX) {
+    Value value = SHORT_STRING_VAL(chars, length);
+    FREE_ARRAY(char, chars, length + 1);
+    return value;
+  }
+
+  return OBJ_VAL(takeString(chars, length));
+}
+
+//Chapter 30 Challenge 2
+Value copyStringValue(const char* chars, int length) {
+  if (length <= SHORT_STRING_MAX) {
+    return SHORT_STRING_VAL(chars, length);
+  }
+
+  return OBJ_VAL(copyString(chars, length));
+}
+
 ObjUpvalue* newUpvalue(Value* slot) {
   ObjUpvalue* upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
   upvalue->closed = NIL_VAL;
